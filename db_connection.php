@@ -1,15 +1,16 @@
 <?php
 // db_connection.php
- = "localhost";
- = "root"; // TU USUARIO DE MYSQL
- = "";     // TU CONTRASEÑA DE MYSQL (vacío en XAMPP/WAMP por defecto)
- = "clinica_db";
 
-// Crear conexión
- = new mysqli(, , , );
+$servername = "localhost";
+$username = "root"; // TU USUARIO DE MYSQL
+$password = "";     // TU CONTRASEÃ‘A DE MYSQL (vacÃ­o en XAMPP/WAMP por defecto)
+$dbname = "clinica_db";
 
-// Verificar conexión
-if (->connect_error) {
-    die("Conexión fallida: " . ->connect_error);
+// Crear conexiÃ³n
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Verificar conexiÃ³n
+if ($conn->connect_error) {
+    die("ConexiÃ³n fallida: " . $conn->connect_error);
 }
 ?>
