@@ -10,29 +10,33 @@ include('db_connection.php');
 
 // Lógica de AGREGAR CITA (CREATE)
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_cita'])) {
-    $paciente_id = $_POST['paciente_id'] ?? 0;
+    $paciente_id = (int)($_POST['paciente_id'] ?? 0);
     $fecha_hora = $_POST['fecha_hora'] ?? '';
     $motivo = $_POST['motivo'] ?? '';
     
     $stmt = $conn->prepare("INSERT INTO citas (paciente_id, fecha, motivo) VALUES (?, ?, ?)");
     $stmt->bind_param("iss", $paciente_id, $fecha_hora, $motivo);
-    $stmt->execute();
+    
+    if (!$stmt->execute()) {
+        $error_msg = "Error al agendar cita: " . $stmt->error;
+    }
+    
     $stmt->close();
-    header("Location: citas.php");
+    header("Location: citas.php"); 
     exit;
 }
 
-// Lógica de LEER CITAS (READ - usando JOIN)
+// Lógica de LEER CITAS (READ)
 $sql_citas = "SELECT c.id, c.fecha, c.motivo, c.estado, p.nombre, p.apellido 
               FROM citas c 
               JOIN pacientes p ON c.paciente_id = p.id
               ORDER BY c.fecha DESC";
 $result_citas = $conn->query($sql_citas);
-$citas = $result_citas->fetch_all(MYSQLI_ASSOC);
+$citas = $result_citas ? $result_citas->fetch_all(MYSQLI_ASSOC) : [];
 
-// Obtener lista de pacientes para el formulario
+// Obtener lista de pacientes para el formulario SELECT
 $result_pacientes = $conn->query("SELECT id, nombre, apellido FROM pacientes ORDER BY nombre ASC");
-$pacientes = $result_pacientes->fetch_all(MYSQLI_ASSOC);
+$pacientes = $result_pacientes ? $result_pacientes->fetch_all(MYSQLI_ASSOC) : [];
 
 $conn->close();
 ?>
@@ -53,19 +57,24 @@ $conn->close();
             <ul>
                 <li class="mb-2"><a href="dashboard.php" class="block p-2 rounded hover:bg-gray-700">Inicio</a></li>
                 <li class="mb-2"><a href="pacientes.php" class="block p-2 rounded hover:bg-gray-700">Pacientes</a></li>
-                <li class="mb-2"><a href="citas.php" class="block p-2 rounded bg-gray-700">Citas</a></li> <li class="mb-2"><a href="logout.php" class="block p-2 rounded hover:bg-red-700 bg-red-500">Cerrar Sesión</a></li>
+                <li class="mb-2"><a href="citas.php" class="block p-2 rounded bg-gray-700">Citas</a></li>
+                <li class="mb-2"><a href="logout.php" class="block p-2 rounded hover:bg-red-700 bg-red-500">Cerrar Sesión</a></li>
             </ul>
         </aside>
         <main class="flex-1 p-8">
             <h1 class="text-3xl font-bold text-gray-800 mb-6">Gestión de Citas</h1>
             
+            <?php if (isset($error_msg)): ?>
+                <p class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 font-semibold text-sm"><?php echo $error_msg; ?></p>
+            <?php endif; ?>
+
             <div class="bg-white p-6 rounded-lg shadow-md mb-8">
                 <h2 class="text-xl font-semibold mb-4">Agendar Nueva Cita</h2>
                 <form action="citas.php" method="POST" class="grid grid-cols-4 gap-4">
                     <select name="paciente_id" required class="p-2 border rounded">
                         <option value="">Seleccionar Paciente</option>
                         <?php foreach ($pacientes as $p): ?>
-                            <option value="<?php echo $p['id']; ?>"><?php echo $p['nombre'] . ' ' . $p['apellido']; ?></option>
+                            <option value="<?php echo $p['id']; ?>"><?php echo htmlspecialchars($p['nombre'] . ' ' . $p['apellido']); ?></option>
                         <?php endforeach; ?>
                     </select>
                     <input type="datetime-local" name="fecha_hora" required class="p-2 border rounded">
@@ -85,19 +94,28 @@ $conn->close();
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                         </tr>
                     </thead>
+                    
                     <tbody class="bg-white divide-y divide-gray-200">
                         <?php foreach ($citas as $cita): ?>
-                        <tr>
+                        <tr class="<?php echo $cita['estado'] == 'pendiente' ? 'bg-yellow-50' : 'bg-white'; ?>">
                             <td class="px-6 py-4 whitespace-nowrap"><?php echo date('d/m/Y H:i', strtotime($cita['fecha'])); ?></td>
-                            <td class="px-6 py-4 whitespace-nowrap"><?php echo $cita['nombre'] . ' ' . $cita['apellido']; ?></td>
-                            <td class="px-6 py-4 whitespace-nowrap"><?php echo $cita['motivo']; ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap"><?php echo htmlspecialchars($cita['nombre'] . ' ' . $cita['apellido']); ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap"><?php echo htmlspecialchars($cita['motivo']); ?></td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800"><?php echo $cita['estado']; ?></span>
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                     <?php
+                                         // Aplicar color de badge según el estado
+                                         if ($cita['estado'] == 'confirmada') echo 'bg-green-100 text-green-800';
+                                         else if ($cita['estado'] == 'cancelada') echo 'bg-red-100 text-red-800';
+                                         else echo 'bg-yellow-100 text-yellow-800'; // Por defecto, 'pendiente'
+                                     ?>">
+                                    <?php echo ucfirst($cita['estado']); ?>
+                                </span>
                             </td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
-                </table>
+                    </table>
             </div>
         </main>
     </div>
