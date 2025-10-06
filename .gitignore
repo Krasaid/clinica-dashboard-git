@@ -1,0 +1,7 @@
+# Ignorar carpetas de dependencias típicas de PHP/JS
+/vendor
+/node_modules
+
+# Ignorar archivos temporales o de configuración local
+.env
+.DS_Store
