@@ -35,6 +35,9 @@ $conn->close();
             <ul>
                 <li class="mb-2"><a href="dashboard.php" class="block p-2 rounded bg-gray-700">Inicio</a></li>
                 <li class="mb-2"><a href="pacientes.php" class="block p-2 rounded hover:bg-gray-700">Pacientes</a></li>
+                            <ul>
+                <li class="mb-2"><a href="dashboard.php" class="block p-2 rounded bg-gray-700">Inicio</a></li>
+                <li class="mb-2"><a href="pacientes.php" class="block p-2 rounded hover:bg-gray-700">Pacientes</a></li>
                 <li class="mb-2"><a href="citas.php" class="block p-2 rounded hover:bg-gray-700">Citas</a></li>
                 <li class="mb-2"><a href="logout.php" class="block p-2 rounded hover:bg-red-700 bg-red-500">Cerrar Sesión</a></li>
             </ul>

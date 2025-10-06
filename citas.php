@@ -94,21 +94,28 @@ $conn->close();
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                         </tr>
                     </thead>
+                    
                     <tbody class="bg-white divide-y divide-gray-200">
                         <?php foreach ($citas as $cita): ?>
-                        <tr>
+                        <tr class="<?php echo $cita['estado'] == 'pendiente' ? 'bg-yellow-50' : 'bg-white'; ?>">
                             <td class="px-6 py-4 whitespace-nowrap"><?php echo date('d/m/Y H:i', strtotime($cita['fecha'])); ?></td>
                             <td class="px-6 py-4 whitespace-nowrap"><?php echo htmlspecialchars($cita['nombre'] . ' ' . $cita['apellido']); ?></td>
                             <td class="px-6 py-4 whitespace-nowrap"><?php echo htmlspecialchars($cita['motivo']); ?></td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                     <?php
+                                         // Aplicar color de badge según el estado
+                                         if ($cita['estado'] == 'confirmada') echo 'bg-green-100 text-green-800';
+                                         else if ($cita['estado'] == 'cancelada') echo 'bg-red-100 text-red-800';
+                                         else echo 'bg-yellow-100 text-yellow-800'; // Por defecto, 'pendiente'
+                                     ?>">
                                     <?php echo ucfirst($cita['estado']); ?>
                                 </span>
                             </td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
-                </table>
+                    </table>
             </div>
         </main>
     </div>
