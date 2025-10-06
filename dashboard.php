@@ -11,11 +11,11 @@ include('db_connection.php');
 $userName = $_SESSION['user_name'];
 $userRole = $_SESSION['user_role'];
 
-// LÓGICA DE MÉTRICAS
+// LÓGICA DE MÉTRICAS (Mantenida en PHP para carga instantánea)
 $total_pacientes = $conn->query("SELECT COUNT(id) AS total FROM pacientes")->fetch_assoc()['total'];
 $citas_pendientes = $conn->query("SELECT COUNT(id) AS total FROM citas WHERE estado = 'pendiente'")->fetch_assoc()['total'];
 $citas_mes = $conn->query("SELECT COUNT(id) AS total FROM citas WHERE MONTH(fecha) = MONTH(CURRENT_DATE()) AND YEAR(fecha) = YEAR(CURRENT_DATE())")->fetch_assoc()['total'];
-$conn->close();
+$conn->close(); 
 ?>
 
 <!DOCTYPE html>
@@ -39,6 +39,7 @@ $conn->close();
                 <li class="mb-2"><a href="logout.php" class="block p-2 rounded hover:bg-red-700 bg-red-500">Cerrar Sesión</a></li>
             </ul>
         </aside>
+        
         <main class="flex-1 p-8">
             <h1 class="text-3xl font-bold text-gray-800 mb-8">PANEL ADMINISTRATIVO PRINCIPAL</h1>
             
@@ -58,37 +59,59 @@ $conn->close();
             </div>
 
             <div class="bg-white p-6 rounded-lg shadow-md">
-                <h3 class="text-xl font-semibold mb-4">Métricas del Mes (Ejemplo Estático)</h3>
-                <canvas id="citasChart" class="h-80"></canvas>
+                <h3 class="text-xl font-semibold mb-4">Distribución de Citas por Estado (Datos Dinámicos)</h3>
+                <canvas id="citasChart" class="h-80"></canvas> 
             </div>
-
         </main>
     </div>
     
     <script>
-        const ctx = document.getElementById('citasChart');
+        document.addEventListener('DOMContentLoaded', () => {
+            // Llamada AJAX a data.php para obtener datos del gráfico
+            fetch('data.php')
+                .then(response => response.json())
+                .then(data => {
+                    // Solo dibujamos si la respuesta es exitosa y contiene datos
+                    if (data.status === 'success' && data.chart_data.length > 0) {
+                        
+                        // Preparar datos para el gráfico
+                        const labels = data.chart_data.map(item => item.estado.charAt(0).toUpperCase() + item.estado.slice(1));
+                        const counts = data.chart_data.map(item => parseInt(item.count));
+                        
+                        // Definir colores basados en el estado (manual)
+                        const backgroundColors = labels.map(label => {
+                            if (label === 'Pendiente') return 'rgba(251, 191, 36, 0.7)'; // Amarillo
+                            if (label === 'Confirmada') return 'rgba(34, 197, 94, 0.7)'; // Verde
+                            if (label === 'Cancelada') return 'rgba(239, 68, 68, 0.7)'; // Rojo
+                            return 'rgba(156, 163, 175, 0.7)'; // Gris (Default)
+                        });
 
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
-                datasets: [{
-                    label: '# Citas',
-                    data: [12, 19, 3, 5, 2, 3], // Simulación de datos
-                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
+                        // Inicializar el Gráfico
+                        new Chart(document.getElementById('citasChart'), {
+                            type: 'doughnut', 
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: '# Citas',
+                                    data: counts,
+                                    backgroundColor: backgroundColors,
+                                    hoverOffset: 4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'top' },
+                                    title: { display: false }
+                                }
+                            }
+                        });
                     }
-                }
-            }
+                })
+                .catch(error => {
+                    console.error('Error al cargar datos del gráfico:', error);
+                });
         });
     </script>
 </body>
